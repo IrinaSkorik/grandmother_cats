@@ -51,7 +51,12 @@ body {
     opacity: .7;
   }
 
-
+.stars {
+    display: flex;
+}
+.stars img {
+    height: 10px;
+}
 
 .cards_cat:hover .cards_cat__img {
     opacity: 1;
