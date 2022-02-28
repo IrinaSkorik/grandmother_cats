@@ -7,7 +7,34 @@ const closeInfo = function () {
 
 const closeUpdate = function () {
     cat_update.classList.remove("active");
+    cat_update.id = 0;
+    inputs = cat_update.querySelectorAll('input');
+    inputs.forEach((val,i)=>{
+        if(val.className != 'cat__submit') { 
+            val.value = "";
+            val.checked = false;
+        }
+    });
+    cat_update.querySelector("textarea").value = "";
 }
+
+function updateCat(id) {
+    const cats = JSON.parse(localStorage.getItem('cats'));
+
+    closeInfo();
+    cat_update.classList.add("active");
+    elem_input = cat_update.querySelectorAll("input");
+    for(let key in cats[id]) {
+        elem_input.forEach((val,i)=>{
+            if(val.id == key) val.value = cats[id][key];
+            if (val.id == 'favourite') {  val.checked = Boolean(cats[id].favourite); }
+        })
+    };
+
+    console.log(elem_input);
+    cat_update.querySelector("textarea").value = cats[id].description;
+    cat_update.id = id;
+} 
 
 const deleteCat = function(id) {
     const cats = JSON.parse(localStorage.getItem('cats'));
@@ -35,7 +62,10 @@ function showCatInfo(cat) {
             <h2>${cats[cat.id].name}</h2>
             <h3>${cats[cat.id].age+' '+get_desc_years(cats[cat.id].age)}</h3>
             <p>${cats[cat.id].description}</p>
-            <div class="cat_info__delete"></div>
+            <div class="cat_info__button">
+                <div class="cat_info__update"></div>
+                <div class="cat_info__delete"></div>
+            </div>        
         </div>
         <div class="cat_info__close" onclick="closeInfo()"></div>
     `;
@@ -43,6 +73,10 @@ function showCatInfo(cat) {
     cat_info.firstElementChild.querySelector(".cat_info__delete").addEventListener("click", function(e) {
            deleteCat(cat.id);
         });
+
+    cat_info.firstElementChild.querySelector(".cat_info__update").addEventListener("click", function(e) {
+            updateCat(cat.id);
+         });
 }
 
 function setRate(rate){
@@ -97,8 +131,8 @@ function showAllCats() {
   
   const SaveCat = function () {
     const cats = JSON.parse(localStorage.getItem('cats'));
-
     const inputs = document.querySelectorAll("input");
+       
     const bodyJSON = {}; 
     for(let i=0;i<inputs.length;i++){
         if(inputs[i].id === '') continue;
@@ -108,15 +142,24 @@ function showAllCats() {
             bodyJSON[inputs[i].id] = (inputs[i].type == 'number')?+inputs[i].value:inputs[i].value;
         }
     };
+    bodyJSON["description"] = ( document.querySelector("textarea").value || "Описание не заполнено" );
 
-   let maxId = 0;
-   cats.forEach((val,i)=> maxId = (maxId < val.id)?val.id:maxId );
-   bodyJSON["id"] = ++maxId;
-   bodyJSON["description"] = ( document.querySelector("textarea").value || "Описание не заполнено" );
-   api.addCat(bodyJSON)
-   .then((val)=>{
-    cat_update.classList.remove("active");  
-    showAllCats()});
+     if (cat_update.id == 0) {
+        let maxId = 0;
+        cats.forEach((val,i)=> maxId = (maxId < val.id)?val.id:maxId );
+        bodyJSON["id"] = ++maxId;
+
+        api.addCat(bodyJSON)
+        .then((val)=>{
+            closeUpdate();  
+            showAllCats()});
+    } else {
+        bodyJSON["id"] = cats[cat_update.id].id;
+        api.updateCat(cats[cat_update.id].id, bodyJSON)
+        .then((val)=>{
+            closeUpdate();  
+            showAllCats()});
+    };
 }
 
 function show_addCat() {
